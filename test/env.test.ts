@@ -2,7 +2,7 @@ import { env } from '../src'
 
 describe('env', () => {
   test('env config', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname
     })
     expect(config).toStrictEqual({
@@ -14,7 +14,7 @@ describe('env', () => {
   })
 
   test('development config', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'development'
     })
@@ -27,7 +27,7 @@ describe('env', () => {
   })
 
   test('development config with prefix', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'development',
       prefix: 'APP_'
@@ -38,7 +38,7 @@ describe('env', () => {
   })
 
   test('production config', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'production'
     })
@@ -51,7 +51,7 @@ describe('env', () => {
   })
 
   test('production config with prefix', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'production',
       prefix: 'APP_'
@@ -62,7 +62,7 @@ describe('env', () => {
   })
 
   test('test config', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'test'
     })
@@ -75,7 +75,7 @@ describe('env', () => {
   })
 
   test('test config with prefix', async () => {
-    const config = await env({
+    const config = env({
       root: __dirname,
       mode: 'test',
       prefix: 'APP_'

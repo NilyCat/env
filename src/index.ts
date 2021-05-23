@@ -1,7 +1,6 @@
 import * as dotenv from 'dotenv-defaults'
-import { readFile as rf, stat } from 'fs'
+import { readFileSync } from 'fs'
 import { resolve as pr } from 'path'
-import { promisify } from 'util'
 
 export interface EnvOptions {
   root: string
@@ -14,17 +13,14 @@ export type EnvConfig = Record<string, string>
 
 export const resolve = pr
 
-export async function readFile(filePath: string): Promise<string | undefined> {
-  const stats = await promisify(stat)(filePath)
-
-  if (stats.isFile()) {
-    const buffer = await promisify(rf)(filePath) as Buffer
-    return buffer.toString('utf8')
-  }
+export function readFile(filePath: string): string | undefined {
+  try {
+    return readFileSync(filePath).toString()
+  } catch (err) {}
 }
 
-export async function envConfig(filePath: string, prefix?: string): Promise<EnvConfig | undefined> {
-  const content = await readFile(filePath)
+export function envConfig(filePath: string, prefix?: string): EnvConfig | undefined {
+  const content = readFile(filePath)
 
   if (content) {
     const result = dotenv.parse(content)
@@ -54,21 +50,21 @@ export async function envConfig(filePath: string, prefix?: string): Promise<EnvC
   }
 }
 
-export async function env({
+export function env({
   root,
   mode,
   prefix,
   envFileName = '.env'
-}: EnvOptions): Promise<EnvConfig> {
+}: EnvOptions): EnvConfig {
   let config: EnvConfig = {}
 
-  const basicConfig = await envConfig(resolve(root, envFileName), prefix)
+  const basicConfig = envConfig(resolve(root, envFileName), prefix)
   if (basicConfig) {
     config = { ...config, ...basicConfig }
   }
 
   if (mode) {
-    const modeConfig = await envConfig(
+    const modeConfig = envConfig(
       resolve(root, [envFileName, mode].join('.')),
       prefix
     )
