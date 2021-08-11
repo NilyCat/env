@@ -1,78 +1,62 @@
-import * as dotenv from 'dotenv-defaults'
-import { readFileSync } from 'fs'
-import { resolve as pr } from 'path'
+import { existsSync } from "fs";
+import { resolve } from "path";
 
 export interface EnvOptions {
-  root: string
-  mode?: '"development"' | '"production"' | '"test"' | string
-  envFileName?: string
-  prefix?: string
+  root: string;
+  envFileName?: string;
+  prefix: string;
 }
 
-export type EnvConfig = Record<string, string>
-
-export const resolve = pr
-
-export function readFile(filePath: string): string | undefined {
-  try {
-    return readFileSync(filePath).toString()
-  } catch (err) {}
+export interface EnvResult {
+  "process.env": Record<string, string>;
 }
 
-export function envConfig(filePath: string, prefix?: string): EnvConfig | undefined {
-  const content = readFile(filePath)
-
-  if (content) {
-    const result = dotenv.parse(content)
-    let config: EnvConfig = {}
-
-    if (prefix) {
-      Object.keys(result).forEach(key => {
-        if (key.startsWith(prefix)) {
-          config[key] = result[key]
-        }
-      })
-    } else {
-      config = result
-    }
-
-    for (const key of Object.keys(result)) {
-      const value = JSON.stringify(result[key])
-
-      if (prefix && !key.startsWith(prefix)) {
-        continue
-      }
-
-      config[key] = value
-    }
-
-    return config
-  }
-}
-
-export function env({
+export function getEnvironment({
   root,
-  mode,
+  envFileName = ".env",
   prefix,
-  envFileName = '.env'
-}: EnvOptions): EnvConfig {
-  let config: EnvConfig = {}
-
-  const basicConfig = envConfig(resolve(root, envFileName), prefix)
-  if (basicConfig) {
-    config = { ...config, ...basicConfig }
+}: EnvOptions): EnvResult {
+  const NODE_ENV = process.env.NODE_ENV;
+  if (!NODE_ENV) {
+    throw new Error(
+      "The NODE_ENV environment variable is required but was not specified."
+    );
   }
 
-  if (mode) {
-    const modeConfig = envConfig(
-      resolve(root, [envFileName, mode].join('.')),
-      prefix
-    )
+  const dotenvFiles = [
+    resolve(root, envFileName),
+    resolve(root, [envFileName, NODE_ENV].join(".")),
+  ];
 
-    if (modeConfig) {
-      config = { ...config, ...modeConfig }
+  dotenvFiles.forEach((dotenvFile) => {
+    if (existsSync(dotenvFile)) {
+      require("dotenv-expand")(
+        require("dotenv").config({
+          path: dotenvFile,
+        })
+      );
     }
-  }
+  });
 
-  return config
+  const raw: Record<string, any> = Object.keys(process.env)
+    .filter((key) => key.startsWith(prefix))
+    .reduce(
+      (env: Record<string, any>, key) => {
+        env[key] = process.env[key];
+        return env;
+      },
+      {
+        // Useful for determining whether we’re running in production mode.
+        // Most importantly, it switches into the correct mode.
+        NODE_ENV: process.env.NODE_ENV || "development",
+      }
+    );
+
+  // Stringify all values so we can feed into webpack DefinePlugin
+  return {
+    "process.env": Object.keys(raw).reduce((env: Record<string, any>, key) => {
+      env[key] = JSON.stringify(raw[key]);
+      return env;
+    }, {}),
+  };
 }

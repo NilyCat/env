@@ -14,6 +14,7 @@
     "listFiles": true,
     "allowJs": false,
     "declaration": true,
+    "declarationDir": "./lib/types",
     "sourceMap": true,
     "importHelpers": true,
     "resolveJsonModule": false
