@@ -1,10 +1,12 @@
 import { existsSync } from "fs";
 import { resolve } from "path";
+import { envConfig } from "./envConfig";
 
 export interface EnvOptions {
   root: string;
   envFileName?: string;
-  prefix: string;
+  prefix?: string;
+  overwritten?: boolean;
 }
 
 export interface EnvResult {
@@ -15,6 +17,7 @@ export function getEnvironment({
   root,
   envFileName = ".env",
   prefix,
+  overwritten = false,
 }: EnvOptions): EnvResult {
   const NODE_ENV = process.env.NODE_ENV;
   if (!NODE_ENV) {
@@ -31,15 +34,16 @@ export function getEnvironment({
   dotenvFiles.forEach((dotenvFile) => {
     if (existsSync(dotenvFile)) {
       require("dotenv-expand")(
-        require("dotenv").config({
+        envConfig({
           path: dotenvFile,
+          overwritten,
         })
       );
     }
   });
 
   const raw: Record<string, any> = Object.keys(process.env)
-    .filter((key) => key.startsWith(prefix))
+    .filter((key) => (prefix ? key.startsWith(prefix) : true))
     .reduce(
       (env: Record<string, any>, key) => {
         env[key] = process.env[key];
@@ -48,7 +52,7 @@ export function getEnvironment({
       {
         // Useful for determining whether we’re running in production mode.
         // Most importantly, it switches into the correct mode.
-        NODE_ENV: process.env.NODE_ENV || "development",
+        NODE_ENV: process.env.NODE_ENV,
       }
     );
 
