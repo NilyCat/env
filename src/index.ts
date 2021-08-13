@@ -19,12 +19,10 @@ export function getEnvironment({
   prefix,
   overwritten = false,
 }: EnvOptions): EnvResult {
-  const NODE_ENV = process.env.NODE_ENV;
-  if (!NODE_ENV) {
-    throw new Error(
-      "The NODE_ENV environment variable is required but was not specified."
-    );
-  }
+  const NODE_ENV = process.env.NODE_ENV || "development";
+
+  // If the env.NODE_ENV doesn't exist, create it
+  process.env.NODE_ENV = NODE_ENV;
 
   const dotenvFiles = [
     resolve(root, envFileName),
